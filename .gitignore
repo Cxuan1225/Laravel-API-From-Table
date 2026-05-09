@@ -1,0 +1,12 @@
+vendor/
+node_modules/
+.env
+.DS_Store
+.phpunit.cache/
+coverage/
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.stackdump
+/docs
+/tests

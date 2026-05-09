@@ -1,0 +1,19 @@
+<?php
+
+namespace {{ namespace }};
+
+use Illuminate\Database\Eloquent\Model;
+{{ imports }}
+
+final class {{ class }} extends Model
+{
+{{ table_property }}
+
+    protected $fillable = [
+{{ fillable }}
+    ];
+
+{{ casts }}
+
+{{ relationships }}
+}

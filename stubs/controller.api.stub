@@ -1,0 +1,58 @@
+<?php
+
+namespace {{ namespace }};
+
+use {{ action_namespace }}\{{ store_action_class }};
+use {{ action_namespace }}\{{ update_action_class }};
+use {{ data_namespace }}\{{ store_data_class }};
+use {{ data_namespace }}\{{ update_data_class }};
+use {{ model_namespace }}\{{ model_class }};
+use {{ request_namespace }}\{{ store_request_class }};
+use {{ request_namespace }}\{{ update_request_class }};
+use {{ resource_namespace }}\{{ resource_class }};
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Response;
+
+final class {{ class }} extends Controller
+{
+    public function __construct(
+        private readonly {{ store_action_class }} ${{ store_action_variable }},
+        private readonly {{ update_action_class }} ${{ update_action_variable }},
+    ) {}
+
+    public function index(): AnonymousResourceCollection
+    {
+        return {{ resource_class }}::collection({{ model_class }}::query()->paginate());
+    }
+
+    public function store({{ store_request_class }} $request): {{ resource_class }}
+    {
+        ${{ model_variable }} = $this->{{ store_action_variable }}->handle(
+            {{ store_data_class }}::fromRequest($request),
+        );
+
+        return new {{ resource_class }}(${{ model_variable }});
+    }
+
+    public function show({{ model_class }} ${{ model_variable }}): {{ resource_class }}
+    {
+        return new {{ resource_class }}(${{ model_variable }});
+    }
+
+    public function update({{ update_request_class }} $request, {{ model_class }} ${{ model_variable }}): {{ resource_class }}
+    {
+        ${{ model_variable }} = $this->{{ update_action_variable }}->handle(
+            ${{ model_variable }},
+            {{ update_data_class }}::fromRequest($request),
+        );
+
+        return new {{ resource_class }}(${{ model_variable }});
+    }
+
+    public function destroy({{ model_class }} ${{ model_variable }}): Response
+    {
+        ${{ model_variable }}->delete();
+
+        return response()->noContent();
+    }
+}

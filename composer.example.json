@@ -1,0 +1,61 @@
+{
+  "name": "cxuan1225/laravel-api-from-table",
+  "description": "Generate Laravel API classes from existing database tables.",
+  "type": "library",
+  "license": "MIT",
+  "keywords": [
+    "laravel",
+    "eloquent",
+    "model",
+    "generator",
+    "database-first",
+    "form-request",
+    "scaffolding"
+  ],
+  "authors": [
+    {
+      "name": "Cxuan1225"
+    }
+  ],
+  "require": {
+    "php": "^8.2",
+    "illuminate/support": "^12.0|^13.0",
+    "illuminate/console": "^12.0|^13.0",
+    "illuminate/database": "^12.0|^13.0",
+    "illuminate/filesystem": "^12.0|^13.0"
+  },
+  "require-dev": {
+    "orchestra/testbench": "^10.0|^11.0",
+    "pestphp/pest": "^3.0",
+    "pestphp/pest-plugin-laravel": "^3.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "Cxuan1225\\LaravelApiFromTable\\": "src/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Cxuan1225\\LaravelApiFromTable\\Tests\\": "tests/"
+    }
+  },
+  "extra": {
+    "laravel": {
+      "providers": [
+        "Cxuan1225\\LaravelApiFromTable\\ApiFromTableServiceProvider"
+      ]
+    }
+  },
+  "scripts": {
+    "test": "pest",
+    "test-coverage": "pest --coverage"
+  },
+  "config": {
+    "sort-packages": true,
+    "allow-plugins": {
+      "pestphp/pest-plugin": true
+    }
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true
+}

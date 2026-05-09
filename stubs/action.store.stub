@@ -1,0 +1,14 @@
+<?php
+
+namespace {{ namespace }};
+
+use {{ data_namespace }}\{{ data_class }};
+use {{ model_namespace }}\{{ model_class }};
+
+final class {{ class }}
+{
+    public function handle({{ data_class }} $data): {{ model_class }}
+    {
+        return {{ model_class }}::query()->create($data->toArray());
+    }
+}

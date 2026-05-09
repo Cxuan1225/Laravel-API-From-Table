@@ -1,0 +1,38 @@
+<?php
+
+namespace {{ namespace }};
+
+use Illuminate\Foundation\Http\FormRequest;
+
+final readonly class {{ class }}
+{
+    /**
+     * @param array<string, mixed> $attributes
+     */
+    private function __construct(
+        private array $attributes,
+    ) {}
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    public static function fromArray(array $data): self
+    {
+        return new self(array_intersect_key($data, array_flip([
+{{ allowed_fields }}
+        ])));
+    }
+
+    public static function fromRequest(FormRequest $request): self
+    {
+        return self::fromArray($request->validated());
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function toArray(): array
+    {
+        return $this->attributes;
+    }
+}

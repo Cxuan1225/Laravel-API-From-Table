@@ -1,0 +1,16 @@
+<?php
+
+namespace {{ namespace }};
+
+use {{ data_namespace }}\{{ data_class }};
+use {{ model_namespace }}\{{ model_class }};
+
+final class {{ class }}
+{
+    public function handle({{ model_class }} ${{ model_variable }}, {{ data_class }} $data): {{ model_class }}
+    {
+        ${{ model_variable }}->update($data->toArray());
+
+        return ${{ model_variable }};
+    }
+}
