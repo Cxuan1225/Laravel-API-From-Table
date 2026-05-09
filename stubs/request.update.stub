@@ -3,6 +3,7 @@
 namespace {{ namespace }};
 
 use Illuminate\Foundation\Http\FormRequest;
+{{ imports }}
 
 final class {{ class }} extends FormRequest
 {

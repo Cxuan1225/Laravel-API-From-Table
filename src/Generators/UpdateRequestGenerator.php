@@ -28,6 +28,7 @@ class UpdateRequestGenerator
         return $this->renderer->render($this->loadStub(), [
             'namespace' => (string) config('api-from-table.namespace.requests', 'App\\Http\\Requests'),
             'class' => 'Update'.$modelName.'Request',
+            'imports' => $this->buildImports($rules),
             'rules' => $this->buildRules($rules),
         ]);
     }
@@ -59,10 +60,35 @@ class UpdateRequestGenerator
     {
         $lines = [];
         foreach ($rules as $name => $columnRules) {
-            $quoted = array_map(fn (string $r): string => "'{$r}'", $columnRules);
+            $quoted = array_map(fn (string $r): string => $this->renderRule($r), $columnRules);
             $lines[] = "            '{$name}' => [".implode(', ', $quoted).'],';
         }
 
         return implode("\n", $lines);
+    }
+
+    /**
+     * @param  array<string, list<string>>  $rules
+     */
+    protected function buildImports(array $rules): string
+    {
+        foreach ($rules as $columnRules) {
+            foreach ($columnRules as $rule) {
+                if (str_starts_with($rule, 'Rule::')) {
+                    return 'use Illuminate\Validation\Rule;';
+                }
+            }
+        }
+
+        return '';
+    }
+
+    protected function renderRule(string $rule): string
+    {
+        if (str_starts_with($rule, 'Rule::')) {
+            return $rule;
+        }
+
+        return "'{$rule}'";
     }
 }

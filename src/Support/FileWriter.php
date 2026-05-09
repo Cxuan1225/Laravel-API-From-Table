@@ -28,4 +28,33 @@ class FileWriter
     {
         return $this->files->exists($path);
     }
+
+    public function appendRoute(string $path, string $route): bool
+    {
+        $this->files->ensureDirectoryExists(dirname($path));
+
+        $contents = $this->files->exists($path)
+            ? $this->files->get($path)
+            : "<?php\n\n";
+
+        $changed = false;
+        $routeImport = 'use Illuminate\Support\Facades\Route;';
+
+        if (! str_contains($contents, $routeImport)) {
+            $contents = preg_replace('/^<\?php\s*/', "<?php\n\n{$routeImport}\n\n", $contents, 1) ?? $contents;
+            $changed = true;
+        }
+
+        if (! str_contains($contents, $route)) {
+            $separator = str_ends_with($contents, "\n") ? '' : "\n";
+            $contents .= $separator.$route."\n";
+            $changed = true;
+        }
+
+        if ($changed) {
+            $this->files->put($path, $contents);
+        }
+
+        return $changed;
+    }
 }

@@ -43,6 +43,10 @@ class CastInferrer
     {
         $tinyintAsBoolean = (bool) config('api-from-table.tinyint_one_as_boolean', true);
 
+        if (strtolower($column->name) === 'password') {
+            return 'hashed';
+        }
+
         if ($tinyintAsBoolean && $column->isTinyIntBoolean()) {
             return 'boolean';
         }

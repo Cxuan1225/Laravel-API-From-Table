@@ -13,6 +13,8 @@ final class {{ class }} extends Model
 {{ fillable }}
     ];
 
+{{ hidden }}
+
 {{ casts }}
 
 {{ relationships }}

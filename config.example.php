@@ -17,6 +17,8 @@ return [
         'actions' => app_path('Actions'),
         'resources' => app_path('Http/Resources'),
         'controllers' => app_path('Http/Controllers'),
+        'routes' => base_path('routes/web.php'),
+        'tests' => base_path('tests/Feature'),
     ],
 
     'exclude_fillable' => [
@@ -30,14 +32,33 @@ return [
         'password',
         'remember_token',
         'api_token',
+        'refresh_token',
+        'access_token',
+        'token',
+        'otp',
+        'otp_secret',
+        'api_key',
+        'client_secret',
         'secret',
         'private_key',
+        'recovery_codes',
         'two_factor_secret',
+        'two_factor_recovery_codes',
     ],
 
     'sensitive_patterns' => [
         'password',
         'secret',
+    ],
+
+    'field_policies' => [
+        'fillable' => [],
+        'request_rules' => [],
+        'resource_visible' => [],
+        'model_hidden' => [],
+        'write_only' => [
+            'password',
+        ],
     ],
 
     'tinyint_one_as_boolean' => true,

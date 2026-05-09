@@ -6,67 +6,40 @@ namespace Cxuan1225\LaravelApiFromTable\Inferrers;
 
 use Cxuan1225\LaravelApiFromTable\Schema\ColumnSchema;
 use Cxuan1225\LaravelApiFromTable\Schema\TableSchema;
+use Illuminate\Support\Str;
 
 class ValidationRuleInferrer
 {
+    public function __construct(
+        protected ?FieldExposureResolver $fieldExposureResolver = null,
+    ) {
+        $this->fieldExposureResolver ??= new FieldExposureResolver();
+    }
+
     /**
      * @return array<string, list<string>>
      */
     public function infer(TableSchema $schema, bool $forUpdate = false): array
     {
-        $excluded = (array) config('api-from-table.exclude_fillable', [
-            'id',
-            'created_at',
-            'updated_at',
-            'deleted_at',
-        ]);
-
         $tinyintAsBoolean = (bool) config('api-from-table.tinyint_one_as_boolean', true);
+        $allowedFields = $this->fieldExposureResolver->requestRules($schema);
 
         $rules = [];
         foreach ($schema->columns as $column) {
-            if ($column->autoIncrement) {
-                continue;
-            }
-            if (in_array($column->name, $excluded, true)) {
-                continue;
-            }
-            if ($this->isSensitive($column->name)) {
+            if (! in_array($column->name, $allowedFields, true)) {
                 continue;
             }
 
-            $rules[$column->name] = $this->rulesFor($column, $forUpdate, $tinyintAsBoolean);
+            $rules[$column->name] = $this->rulesFor($schema, $column, $forUpdate, $tinyintAsBoolean);
         }
 
         return $rules;
     }
 
-    protected function isSensitive(string $name): bool
-    {
-        $exact = (array) config('api-from-table.sensitive_columns', []);
-        if (in_array($name, $exact, true)) {
-            return true;
-        }
-
-        $patterns = (array) config('api-from-table.sensitive_patterns', []);
-        $lower = strtolower($name);
-        foreach ($patterns as $pattern) {
-            $pattern = (string) $pattern;
-            if ($pattern === '') {
-                continue;
-            }
-            if (str_contains($lower, strtolower($pattern))) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     /**
      * @return list<string>
      */
-    protected function rulesFor(ColumnSchema $column, bool $forUpdate, bool $tinyintAsBoolean): array
+    protected function rulesFor(TableSchema $schema, ColumnSchema $column, bool $forUpdate, bool $tinyintAsBoolean): array
     {
         $isBoolean = ($tinyintAsBoolean && $column->isTinyIntBoolean())
             || in_array($column->type, ['boolean', 'bool'], true);
@@ -85,7 +58,11 @@ class ValidationRuleInferrer
             $rules[] = $rule;
         }
 
-        return $rules;
+        foreach ($this->metadataRules($schema, $column, $forUpdate) as $rule) {
+            $rules[] = $rule;
+        }
+
+        return array_values(array_unique($rules));
     }
 
     /**
@@ -120,6 +97,12 @@ class ValidationRuleInferrer
             case 'char':
             case 'string':
                 $rules = ['string'];
+                if ($this->isEmailColumn($column)) {
+                    $rules[] = 'email';
+                }
+                if ($this->isUuidColumn($column)) {
+                    $rules[] = 'uuid';
+                }
                 if ($column->length !== null) {
                     $rules[] = 'max:'.$column->length;
                 }
@@ -164,5 +147,67 @@ class ValidationRuleInferrer
             default:
                 return [];
         }
+    }
+
+    /**
+     * @return list<string>
+     */
+    protected function metadataRules(TableSchema $schema, ColumnSchema $column, bool $forUpdate): array
+    {
+        $rules = [];
+
+        $foreignKey = $schema->foreignKeyForColumn($column->name);
+        if ($foreignKey !== null) {
+            $rules[] = 'exists:'.$foreignKey->foreignTable.','.$foreignKey->foreignColumns[0];
+        }
+
+        $enum = $schema->enumForColumn($column->name);
+        if ($enum !== null && $enum->values !== []) {
+            $rules[] = $this->ruleIn($enum->values);
+        }
+
+        $check = $schema->checkForColumn($column->name);
+        if ($check !== null && $check->values !== []) {
+            $rules[] = $this->ruleIn($check->values);
+        }
+
+        $unique = $schema->uniqueIndexForColumn($column->name);
+        if ($unique !== null) {
+            $rules[] = $forUpdate
+                ? "Rule::unique('{$schema->name}', '{$column->name}')->ignore(\$this->route('".$this->routeParameter($schema)."'))"
+                : "Rule::unique('{$schema->name}', '{$column->name}')";
+        }
+
+        return $rules;
+    }
+
+    /**
+     * @param  list<string>  $values
+     */
+    protected function ruleIn(array $values): string
+    {
+        $quoted = array_map(
+            fn (string $value): string => "'".str_replace("'", "\\'", $value)."'",
+            $values,
+        );
+
+        return 'Rule::in(['.implode(', ', $quoted).'])';
+    }
+
+    protected function isEmailColumn(ColumnSchema $column): bool
+    {
+        return $column->name === 'email' || str_ends_with($column->name, '_email');
+    }
+
+    protected function isUuidColumn(ColumnSchema $column): bool
+    {
+        return $column->type === 'uuid'
+            || $column->name === 'uuid'
+            || str_ends_with($column->name, '_uuid');
+    }
+
+    protected function routeParameter(TableSchema $schema): string
+    {
+        return Str::camel(Str::singular($schema->name));
     }
 }

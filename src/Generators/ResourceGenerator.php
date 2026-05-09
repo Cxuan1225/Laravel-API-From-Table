@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Cxuan1225\LaravelApiFromTable\Generators;
 
-use Cxuan1225\LaravelApiFromTable\Inferrers\FillableInferrer;
+use Cxuan1225\LaravelApiFromTable\Inferrers\FieldExposureResolver;
 use Cxuan1225\LaravelApiFromTable\Inferrers\ModelNameInferrer;
 use Cxuan1225\LaravelApiFromTable\Schema\TableSchema;
 use Cxuan1225\LaravelApiFromTable\Support\StubRenderer;
@@ -15,7 +15,7 @@ class ResourceGenerator
 {
     public function __construct(
         protected ModelNameInferrer $modelNameInferrer,
-        protected FillableInferrer $fillableInferrer,
+        protected FieldExposureResolver $fieldExposureResolver,
         protected StubRenderer $renderer,
         protected Filesystem $files,
     ) {}
@@ -43,18 +43,7 @@ class ResourceGenerator
      */
     protected function fields(TableSchema $schema): array
     {
-        $fields = [];
-        foreach ($schema->columns as $column) {
-            if ($column->primaryKey || $column->name === 'id') {
-                $fields[] = $column->name;
-            }
-        }
-
-        foreach ($this->fillableInferrer->infer($schema) as $field) {
-            $fields[] = $field;
-        }
-
-        return array_values(array_unique($fields));
+        return $this->fieldExposureResolver->resourceVisible($schema);
     }
 
     /**

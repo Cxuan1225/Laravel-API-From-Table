@@ -257,7 +257,7 @@ public function rules(): array
     return [
         'company_id' => ['required', 'integer'],
         'name' => ['required', 'string', 'max:255'],
-        'email' => ['nullable', 'string', 'max:255'],
+        'email' => ['nullable', 'string', 'email', 'max:255'],
         'credit_limit' => ['nullable', 'numeric'],
         'is_active' => ['nullable', 'boolean'],
     ];
@@ -276,6 +276,9 @@ public function rules(): array
 | `--actions` | Generate only Action files |
 | `--resource` | Generate only the API Resource file |
 | `--controller` | Generate only the API Controller file |
+| `--routes` | Append a `Route::apiResource(...)` entry to `routes/web.php` |
+| `--api-routes` | Alias of `--routes` |
+| `--tests` | Generate a Pest endpoint smoke test |
 | `--all` | Generate all supported files, ignoring disabled defaults |
 
 ---
@@ -333,11 +336,13 @@ controller.api.stub
 The first release focuses on generating a practical Laravel API layer from one existing database table:
 
 - Model with `$fillable`, casts, and non-conventional table name support
+- Automatic `$hidden` output for sensitive fields and hashed password casts
 - Store and Update FormRequest classes
 - Store and Update DTO classes
 - Store and Update Action classes
 - API Resource class
 - API Controller with `index`, `store`, `show`, `update`, and `destroy`
+- Optional `routes/web.php` route snippet and Pest smoke test generation
 - `--dry-run`, `--force`, and file-type-only generation options
 - Publishable config and stubs
 
@@ -349,16 +354,12 @@ The first release focuses on generating a practical Laravel API layer from one e
 
 - Foreign key detection
 - BelongsTo relationship generation
-- `exists` validation rule generation
-- Unique index detection
-- Store and update `unique` validation rules
+- Check constraint parsing across more database drivers
 
 ### API Ergonomics
 
-- Optional route snippet generation
 - Optional policy generation
-- Optional feature test generation
-- Smarter validation rules from column names such as `email`, `url`, and `uuid`
+- Smarter validation rules from column names such as `url`
 
 ### Customization
 

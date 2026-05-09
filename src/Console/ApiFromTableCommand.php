@@ -7,6 +7,8 @@ namespace Cxuan1225\LaravelApiFromTable\Console;
 use Cxuan1225\LaravelApiFromTable\Generators\ControllerGenerator;
 use Cxuan1225\LaravelApiFromTable\Generators\ModelGenerator;
 use Cxuan1225\LaravelApiFromTable\Generators\ResourceGenerator;
+use Cxuan1225\LaravelApiFromTable\Generators\RouteGenerator;
+use Cxuan1225\LaravelApiFromTable\Generators\SmokeTestGenerator;
 use Cxuan1225\LaravelApiFromTable\Generators\StoreActionGenerator;
 use Cxuan1225\LaravelApiFromTable\Generators\StoreDataGenerator;
 use Cxuan1225\LaravelApiFromTable\Generators\StoreRequestGenerator;
@@ -32,6 +34,9 @@ class ApiFromTableCommand extends Command
                             {--actions : Generate only the action files}
                             {--resource : Generate only the API resource}
                             {--controller : Generate only the API controller}
+                            {--routes : Append a Route::apiResource entry to routes/web.php}
+                            {--api-routes : Alias of --routes}
+                            {--tests : Generate a Pest endpoint smoke test}
                             {--all : Generate all supported files}';
 
     protected $description = 'Generate Laravel API classes from an existing database table.';
@@ -47,6 +52,8 @@ class ApiFromTableCommand extends Command
         UpdateActionGenerator $updateActionGenerator,
         ResourceGenerator $resourceGenerator,
         ControllerGenerator $controllerGenerator,
+        RouteGenerator $routeGenerator,
+        SmokeTestGenerator $smokeTestGenerator,
         FileWriter $writer,
     ): int {
         $tableName = (string) $this->argument('table');
@@ -63,6 +70,8 @@ class ApiFromTableCommand extends Command
         $dryRun = (bool) $this->option('dry-run');
         $force = (bool) $this->option('force');
         $all = (bool) $this->option('all');
+        $shouldRoutes = (bool) $this->option('routes') || (bool) $this->option('api-routes');
+        $shouldTests = (bool) $this->option('tests');
         $selected = [
             'model' => (bool) $this->option('model'),
             'requests' => (bool) $this->option('requests'),
@@ -87,6 +96,8 @@ class ApiFromTableCommand extends Command
         $actionsPath = (string) config('api-from-table.paths.actions', app_path('Actions'));
         $resourcesPath = (string) config('api-from-table.paths.resources', app_path('Http/Resources'));
         $controllersPath = (string) config('api-from-table.paths.controllers', app_path('Http/Controllers'));
+        $routesPath = (string) config('api-from-table.paths.routes', base_path('routes/web.php'));
+        $testsPath = (string) config('api-from-table.paths.tests', base_path('tests/Feature'));
 
         if ($shouldModel) {
             $modelName = $modelGenerator->modelName($schema);
@@ -185,6 +196,26 @@ class ApiFromTableCommand extends Command
             );
         }
 
+        if ($shouldRoutes) {
+            $this->emitOrAppendRoute(
+                $routesPath,
+                $routeGenerator->generate($schema),
+                $dryRun,
+                $writer,
+            );
+        }
+
+        if ($shouldTests) {
+            $name = $smokeTestGenerator->className($schema);
+            $this->emitOrWrite(
+                $testsPath.DIRECTORY_SEPARATOR.$name.'.php',
+                $smokeTestGenerator->generate($schema),
+                $dryRun,
+                $force,
+                $writer,
+            );
+        }
+
         return self::SUCCESS;
     }
 
@@ -229,6 +260,30 @@ class ApiFromTableCommand extends Command
             $this->info('Created: '.$path);
         } else {
             $this->warn('Skipped (exists): '.$path.'. Use --force to overwrite.');
+        }
+    }
+
+    protected function emitOrAppendRoute(
+        string $path,
+        string $route,
+        bool $dryRun,
+        FileWriter $writer,
+    ): void {
+        $path = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $path);
+
+        if ($dryRun) {
+            $this->line('--- '.$path.' ---');
+            $this->line('use Illuminate\Support\Facades\Route;');
+            $this->line('');
+            $this->line($route);
+
+            return;
+        }
+
+        if ($writer->appendRoute($path, $route)) {
+            $this->info('Updated: '.$path);
+        } else {
+            $this->warn('Skipped (route exists): '.$path.'.');
         }
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Cxuan1225\LaravelApiFromTable\Generators;
 
 use Cxuan1225\LaravelApiFromTable\Inferrers\CastInferrer;
+use Cxuan1225\LaravelApiFromTable\Inferrers\FieldExposureResolver;
 use Cxuan1225\LaravelApiFromTable\Inferrers\FillableInferrer;
 use Cxuan1225\LaravelApiFromTable\Inferrers\ModelNameInferrer;
 use Cxuan1225\LaravelApiFromTable\Schema\TableSchema;
@@ -18,6 +19,7 @@ class ModelGenerator
     public function __construct(
         protected ModelNameInferrer $modelNameInferrer,
         protected FillableInferrer $fillableInferrer,
+        protected FieldExposureResolver $fieldExposureResolver,
         protected CastInferrer $castInferrer,
         protected StubRenderer $renderer,
         protected Filesystem $files,
@@ -27,6 +29,7 @@ class ModelGenerator
     {
         $modelName = $this->modelNameInferrer->infer($schema->name);
         $fillable = $this->fillableInferrer->infer($schema);
+        $hidden = $this->fieldExposureResolver->modelHidden($schema);
         $casts = $this->castInferrer->infer($schema);
 
         return $this->renderer->render($this->loadStub(), [
@@ -35,6 +38,7 @@ class ModelGenerator
             'imports' => '',
             'table_property' => $this->buildTableProperty($schema, $modelName),
             'fillable' => $this->buildFillable($fillable),
+            'hidden' => $this->buildHidden($hidden),
             'casts' => $this->buildCasts($casts),
             'relationships' => '',
         ]);
@@ -79,6 +83,26 @@ class ModelGenerator
         foreach ($fillable as $name) {
             $lines[] = "        '{$name}',";
         }
+
+        return implode("\n", $lines);
+    }
+
+    /**
+     * @param  list<string>  $hidden
+     */
+    protected function buildHidden(array $hidden): string
+    {
+        if ($hidden === []) {
+            return '';
+        }
+
+        $lines = [
+            '    protected $hidden = [',
+        ];
+        foreach ($hidden as $name) {
+            $lines[] = "        '{$name}',";
+        }
+        $lines[] = '    ];';
 
         return implode("\n", $lines);
     }
