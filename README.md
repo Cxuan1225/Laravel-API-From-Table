@@ -328,43 +328,43 @@ controller.api.stub
 
 ---
 
+## Current Status
+
+The first release focuses on generating a practical Laravel API layer from one existing database table:
+
+- Model with `$fillable`, casts, and non-conventional table name support
+- Store and Update FormRequest classes
+- Store and Update DTO classes
+- Store and Update Action classes
+- API Resource class
+- API Controller with `index`, `store`, `show`, `update`, and `destroy`
+- `--dry-run`, `--force`, and file-type-only generation options
+- Publishable config and stubs
+
+---
+
 ## Roadmap
 
-### v0.1.0
-
-- Generate Model
-- Generate StoreRequest
-- Generate UpdateRequest
-- Generate StoreData
-- Generate UpdateData
-- Generate StoreAction
-- Generate UpdateAction
-- Generate API Resource
-- Generate API Controller
-- Generate fillable
-- Generate casts
-- Generate basic validation rules
-- Support dry run
-- Support force overwrite
-
-### v0.2.0
+### Schema Intelligence
 
 - Foreign key detection
 - BelongsTo relationship generation
-- Exists validation rule generation
+- `exists` validation rule generation
 - Unique index detection
+- Store and update `unique` validation rules
 
-### v0.3.0
+### API Ergonomics
 
-- Service generator
-- Request-aware policy hints
-- Route example generation
+- Optional route snippet generation
+- Optional policy generation
+- Optional feature test generation
+- Smarter validation rules from column names such as `email`, `url`, and `uuid`
 
-### v0.4.0
+### Customization
 
-- Feature test generator
-- Policy generator
-- Optional route registration snippets
+- More granular config for generated namespaces and class names
+- Optional timestamps in resources
+- Optional typed DTO properties
 
 ---
 
