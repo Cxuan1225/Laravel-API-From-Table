@@ -2,7 +2,7 @@
 
 Generate Laravel API classes from existing database tables.
 
-This package is designed for **database-first Laravel projects**, legacy systems, admin panels, and business systems where the database schema already exists before the Laravel code structure is created.
+Laravel API From Table is a database-first code generator for Laravel projects. It reads an existing table and generates the API layer around it: model, form requests, DTOs, actions, resource, and controller.
 
 ---
 
@@ -16,9 +16,38 @@ php artisan make:model Customer -crR
 
 That command is useful for generating empty skeleton files.
 
-However, it does not inspect your existing database table columns, nullable fields, indexes, or column types.
+However, it does not inspect your existing database table columns, nullable fields, defaults, indexes, or column types.
 
 This package reads your database table schema and generates more useful Laravel code based on the actual database structure.
+
+---
+
+## Generated Files
+
+Running the command for a `customers` table can generate:
+
+```txt
+app/Models/Customer.php
+app/Http/Requests/StoreCustomerRequest.php
+app/Http/Requests/UpdateCustomerRequest.php
+app/Data/StoreCustomerData.php
+app/Data/UpdateCustomerData.php
+app/Actions/Customers/StoreCustomerAction.php
+app/Actions/Customers/UpdateCustomerAction.php
+app/Http/Resources/CustomerResource.php
+app/Http/Controllers/CustomerController.php
+```
+
+Generated API flow:
+
+```txt
+FormRequest
+→ DTO
+→ Action
+→ Eloquent Model
+→ JsonResource
+→ API Controller
+```
 
 ---
 
@@ -47,15 +76,14 @@ columns / types / nullable / defaults
 
 ## Features
 
-- Generate Eloquent Model from an existing database table
+- Generate Eloquent models from existing database tables
 - Generate `$fillable` from table columns
 - Generate model casts from database column types
-- Generate Store FormRequest rules
-- Generate Update FormRequest rules
-- Generate Store and Update DTO classes
+- Generate Store and Update FormRequest rules
+- Generate Store and Update DTO classes from validated data
 - Generate Store and Update Action classes
-- Generate API Resource classes
-- Generate API resource controllers
+- Generate API resources
+- Generate API resource controllers with `index`, `store`, `show`, `update`, and `destroy`
 - Support `--dry-run` preview
 - Support `--force` overwrite
 - Publishable config
@@ -91,18 +119,17 @@ Generate model, requests, DTOs, actions, resource, and API controller from a dat
 php artisan api:from-table customers
 ```
 
-This will generate files such as:
+The generated controller is API-oriented and wires requests, DTOs, actions, and resources together:
 
-```txt
-app/Models/Customer.php
-app/Http/Requests/StoreCustomerRequest.php
-app/Http/Requests/UpdateCustomerRequest.php
-app/Data/StoreCustomerData.php
-app/Data/UpdateCustomerData.php
-app/Actions/Customers/StoreCustomerAction.php
-app/Actions/Customers/UpdateCustomerAction.php
-app/Http/Resources/CustomerResource.php
-app/Http/Controllers/CustomerController.php
+```php
+public function store(StoreCustomerRequest $request): CustomerResource
+{
+    $customer = $this->storeCustomerAction->handle(
+        StoreCustomerData::fromRequest($request),
+    );
+
+    return new CustomerResource($customer);
+}
 ```
 
 ---
@@ -237,21 +264,6 @@ public function rules(): array
 }
 ```
 
-It also wires generated API classes together:
-
-```php
-public function store(StoreCustomerRequest $request): CustomerResource
-{
-    $customer = $this->storeCustomerAction->handle(
-        StoreCustomerData::fromRequest($request),
-    );
-
-    return new CustomerResource($customer);
-}
-```
-
----
-
 ## Command Options
 
 | Option | Description |
@@ -350,9 +362,9 @@ controller.api.stub
 
 ### v0.4.0
 
-- Controller generator
-- API preset
-- Inertia preset
+- Feature test generator
+- Policy generator
+- Optional route registration snippets
 
 ---
 
@@ -374,4 +386,4 @@ vendor/bin/pest
 
 ## License
 
-The MIT License.
+Laravel API From Table is open-sourced software licensed under the [MIT license](LICENSE).
