@@ -8,6 +8,7 @@ use Cxuan1225\LaravelApiFromTable\Inferrers\CastInferrer;
 use Cxuan1225\LaravelApiFromTable\Inferrers\FieldExposureResolver;
 use Cxuan1225\LaravelApiFromTable\Inferrers\FillableInferrer;
 use Cxuan1225\LaravelApiFromTable\Inferrers\ModelNameInferrer;
+use Cxuan1225\LaravelApiFromTable\Inferrers\RelationshipInferrer;
 use Cxuan1225\LaravelApiFromTable\Schema\TableSchema;
 use Cxuan1225\LaravelApiFromTable\Support\StubRenderer;
 use Illuminate\Filesystem\Filesystem;
@@ -21,6 +22,7 @@ class ModelGenerator
         protected FillableInferrer $fillableInferrer,
         protected FieldExposureResolver $fieldExposureResolver,
         protected CastInferrer $castInferrer,
+        protected RelationshipInferrer $relationshipInferrer,
         protected StubRenderer $renderer,
         protected Filesystem $files,
     ) {}
@@ -31,16 +33,17 @@ class ModelGenerator
         $fillable = $this->fillableInferrer->infer($schema);
         $hidden = $this->fieldExposureResolver->modelHidden($schema);
         $casts = $this->castInferrer->infer($schema);
+        $relationshipsEnabled = (bool) config('api-from-table.generate.relationships', false);
 
         return $this->renderer->render($this->loadStub(), [
             'namespace' => (string) config('api-from-table.namespace.models', 'App\\Models'),
             'class' => $modelName,
-            'imports' => '',
+            'imports' => $this->buildImports($schema, $relationshipsEnabled),
             'table_property' => $this->buildTableProperty($schema, $modelName),
             'fillable' => $this->buildFillable($fillable),
             'hidden' => $this->buildHidden($hidden),
             'casts' => $this->buildCasts($casts),
-            'relationships' => '',
+            'relationships' => $relationshipsEnabled ? $this->buildRelationships($schema) : '',
         ]);
     }
 
@@ -72,6 +75,39 @@ class ModelGenerator
         }
 
         return "    protected \$table = '{$schema->name}';";
+    }
+
+    protected function buildImports(TableSchema $schema, bool $relationshipsEnabled): string
+    {
+        $imports = [
+            'Illuminate\\Database\\Eloquent\\Model',
+        ];
+
+        if ($relationshipsEnabled) {
+            $modelNamespace = (string) config('api-from-table.namespace.models', 'App\\Models');
+            $belongsTo = $this->relationshipInferrer->belongsTo($schema);
+            $hasMany = $this->relationshipInferrer->hasMany($schema);
+
+            if ($belongsTo !== []) {
+                $imports[] = 'Illuminate\\Database\\Eloquent\\Relations\\BelongsTo';
+            }
+
+            if ($hasMany !== []) {
+                $imports[] = 'Illuminate\\Database\\Eloquent\\Relations\\HasMany';
+            }
+
+            foreach ([...$belongsTo, ...$hasMany] as $relationship) {
+                $imports[] = $modelNamespace.'\\'.$relationship['class'];
+            }
+        }
+
+        $imports = array_values(array_unique($imports));
+        sort($imports);
+
+        return implode("\n", array_map(
+            fn (string $import): string => "use {$import};",
+            $imports,
+        ));
     }
 
     /**
@@ -128,5 +164,38 @@ class ModelGenerator
         $lines[] = '    }';
 
         return implode("\n", $lines);
+    }
+
+    protected function buildRelationships(TableSchema $schema): string
+    {
+        $methods = [];
+
+        foreach ($this->relationshipInferrer->belongsTo($schema) as $relationship) {
+            $call = $relationship['uses_default_keys']
+                ? "belongsTo({$relationship['class']}::class)"
+                : "belongsTo({$relationship['class']}::class, '{$relationship['foreign_key']}', '{$relationship['owner_key']}')";
+
+            $methods[] = implode("\n", [
+                "    public function {$relationship['name']}(): BelongsTo",
+                '    {',
+                "        return \$this->{$call};",
+                '    }',
+            ]);
+        }
+
+        foreach ($this->relationshipInferrer->hasMany($schema) as $relationship) {
+            $call = $relationship['uses_default_keys']
+                ? "hasMany({$relationship['class']}::class)"
+                : "hasMany({$relationship['class']}::class, '{$relationship['foreign_key']}', '{$relationship['local_key']}')";
+
+            $methods[] = implode("\n", [
+                "    public function {$relationship['name']}(): HasMany",
+                '    {',
+                "        return \$this->{$call};",
+                '    }',
+            ]);
+        }
+
+        return implode("\n\n", $methods);
     }
 }

@@ -29,6 +29,7 @@ return [
         'resources' => app_path('Http/Resources'),
         'controllers' => app_path('Http/Controllers'),
         'routes' => base_path('routes/web.php'),
+        'api_routes' => base_path('routes/api.php'),
         'tests' => base_path('tests/Feature'),
     ],
 
@@ -119,5 +120,6 @@ return [
         'actions' => true,
         'resource' => true,
         'controller' => true,
+        'relationships' => false,
     ],
 ];

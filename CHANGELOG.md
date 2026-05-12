@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ---
 
-## v0.2.0 - 2026-05-10
+## v0.2.0 - 2026-05-12
 
 ### Added
 
@@ -14,8 +14,16 @@ All notable changes to this project will be documented in this file.
 - Added hashed password casts while keeping passwords writable for store and update flows
 - Added schema metadata for indexes, unique indexes, foreign keys, enums, and check constraints
 - Added validation inference for unique indexes, foreign keys, enum/check values, email fields, and UUID fields
-- Added optional `--routes` and `--api-routes` generation for `routes/web.php`
-- Added optional `--tests` Pest endpoint smoke test generation
+- Added optional `--routes` generation for the configurable routes path
+- Added optional `--api-routes` generation for `routes/api.php`
+- Added optional `--relationships` generation for `belongsTo`, inverse `hasMany`, and resource `whenLoaded` fields
+- Added optional `--tests` Pest endpoint smoke test generation with sensitive-field, password-hashing, unique-update-ignore, and validation-failure coverage
+- Added `--dry-run --json` output with planned files, warnings, skipped files, route targets, and test targets
+
+### Fixed
+
+- Fixed unique update rules for kebab resource route parameters so `legacy-users` ignores `legacy_user` instead of `legacyUser`
+- Reduced generated formatting noise from empty placeholders and model import ordering
 
 ---
 

@@ -208,6 +208,6 @@ class ValidationRuleInferrer
 
     protected function routeParameter(TableSchema $schema): string
     {
-        return Str::camel(Str::singular($schema->name));
+        return Str::snake(Str::singular(str_replace('-', '_', $schema->name)));
     }
 }

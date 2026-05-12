@@ -21,6 +21,7 @@ class StubRenderer
 
     protected function cleanup(string $code): string
     {
+        $code = preg_replace("/[ \t]+$/m", '', $code) ?? $code;
         $code = preg_replace("/\n{3,}/", "\n\n", $code) ?? $code;
         $code = preg_replace("/(\{)\n(\s*\n)+/", "$1\n", $code) ?? $code;
         $code = preg_replace("/(\n\s*\n)+(\s*\})/", "\n$2", $code) ?? $code;

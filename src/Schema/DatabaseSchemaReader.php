@@ -27,6 +27,7 @@ class DatabaseSchemaReader
         $rawColumns = $builder->getColumns($tableName);
         $indexes = $this->readIndexes($builder, $tableName);
         $foreignKeys = $this->readForeignKeys($builder, $tableName);
+        $referencingForeignKeys = $this->readReferencingForeignKeys($builder, $tableName);
         $primaryKeyColumns = $this->resolvePrimaryKey($indexes);
 
         $columns = [];
@@ -45,6 +46,7 @@ class DatabaseSchemaReader
             columns: $columns,
             indexes: $indexes,
             foreignKeys: $foreignKeys,
+            referencingForeignKeys: $referencingForeignKeys,
             enums: $enums,
         );
     }
@@ -132,9 +134,52 @@ class DatabaseSchemaReader
                 foreignSchema: isset($foreignKey['foreign_schema']) ? (string) $foreignKey['foreign_schema'] : null,
                 onUpdate: isset($foreignKey['on_update']) ? (string) $foreignKey['on_update'] : null,
                 onDelete: isset($foreignKey['on_delete']) ? (string) $foreignKey['on_delete'] : null,
+                tableName: $tableName,
             ),
             $foreignKeys,
         ));
+    }
+
+    /**
+     * @return list<ForeignKeySchema>
+     */
+    protected function readReferencingForeignKeys(mixed $builder, string $tableName): array
+    {
+        try {
+            $tables = $builder->getTables();
+        } catch (\Throwable) {
+            return [];
+        }
+
+        $foreignKeys = [];
+        foreach ($tables as $table) {
+            $sourceTable = $this->extractTableName($table);
+            if ($sourceTable === '') {
+                continue;
+            }
+
+            foreach ($this->readForeignKeys($builder, $sourceTable) as $foreignKey) {
+                if ($foreignKey->foreignTable === $tableName) {
+                    $foreignKeys[] = $foreignKey;
+                }
+            }
+        }
+
+        return $foreignKeys;
+    }
+
+    /**
+     * @param  array<string, mixed>  $table
+     */
+    protected function extractTableName(array $table): string
+    {
+        foreach (['name', 'table', 'table_name'] as $key) {
+            if (isset($table[$key]) && is_scalar($table[$key])) {
+                return (string) $table[$key];
+            }
+        }
+
+        return '';
     }
 
     protected function extractBaseType(string $type): string

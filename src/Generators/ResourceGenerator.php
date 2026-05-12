@@ -6,6 +6,7 @@ namespace Cxuan1225\LaravelApiFromTable\Generators;
 
 use Cxuan1225\LaravelApiFromTable\Inferrers\FieldExposureResolver;
 use Cxuan1225\LaravelApiFromTable\Inferrers\ModelNameInferrer;
+use Cxuan1225\LaravelApiFromTable\Inferrers\RelationshipInferrer;
 use Cxuan1225\LaravelApiFromTable\Schema\TableSchema;
 use Cxuan1225\LaravelApiFromTable\Support\StubRenderer;
 use Illuminate\Filesystem\Filesystem;
@@ -16,6 +17,7 @@ class ResourceGenerator
     public function __construct(
         protected ModelNameInferrer $modelNameInferrer,
         protected FieldExposureResolver $fieldExposureResolver,
+        protected RelationshipInferrer $relationshipInferrer,
         protected StubRenderer $renderer,
         protected Filesystem $files,
     ) {}
@@ -29,7 +31,7 @@ class ResourceGenerator
             'class' => $this->className($schema),
             'model_namespace' => (string) config('api-from-table.namespace.models', 'App\\Models'),
             'model_class' => $modelName,
-            'fields' => $this->buildFields($this->fields($schema)),
+            'fields' => $this->buildFields($this->fields($schema), $this->relationshipFields($schema)),
         ]);
     }
 
@@ -48,15 +50,44 @@ class ResourceGenerator
 
     /**
      * @param  list<string>  $fields
+     * @param  list<string>  $relationshipFields
      */
-    protected function buildFields(array $fields): string
+    protected function buildFields(array $fields, array $relationshipFields): string
     {
         $lines = [];
         foreach ($fields as $field) {
             $lines[] = "            '{$field}' => \$this->{$field},";
         }
 
+        foreach ($relationshipFields as $field) {
+            $lines[] = $field;
+        }
+
         return implode("\n", $lines);
+    }
+
+    /**
+     * @return list<string>
+     */
+    protected function relationshipFields(TableSchema $schema): array
+    {
+        if (! (bool) config('api-from-table.generate.relationships', false)) {
+            return [];
+        }
+
+        $fields = [];
+
+        foreach ($this->relationshipInferrer->belongsTo($schema) as $relationship) {
+            $resourceClass = $relationship['class'].'Resource';
+            $fields[] = "            '{$relationship['name']}' => new {$resourceClass}(\$this->whenLoaded('{$relationship['name']}')),";
+        }
+
+        foreach ($this->relationshipInferrer->hasMany($schema) as $relationship) {
+            $resourceClass = $relationship['class'].'Resource';
+            $fields[] = "            '{$relationship['name']}' => {$resourceClass}::collection(\$this->whenLoaded('{$relationship['name']}')),";
+        }
+
+        return $fields;
     }
 
     protected function loadStub(): string

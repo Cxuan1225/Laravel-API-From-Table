@@ -57,4 +57,10 @@ class FileWriter
 
         return $changed;
     }
+
+    public function routeExists(string $path, string $route): bool
+    {
+        return $this->files->exists($path)
+            && str_contains($this->files->get($path), $route);
+    }
 }

@@ -18,5 +18,6 @@ final readonly class ForeignKeySchema
         public ?string $foreignSchema = null,
         public ?string $onUpdate = null,
         public ?string $onDelete = null,
+        public ?string $tableName = null,
     ) {}
 }

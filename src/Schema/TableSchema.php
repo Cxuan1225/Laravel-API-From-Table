@@ -12,6 +12,7 @@ final readonly class TableSchema
      * @param  list<ForeignKeySchema>  $foreignKeys
      * @param  list<EnumSchema>  $enums
      * @param  list<CheckConstraintSchema>  $checks
+     * @param  list<ForeignKeySchema>  $referencingForeignKeys
      */
     public function __construct(
         public string $name,
@@ -20,6 +21,7 @@ final readonly class TableSchema
         public array $foreignKeys = [],
         public array $enums = [],
         public array $checks = [],
+        public array $referencingForeignKeys = [],
     ) {}
 
     public function column(string $name): ?ColumnSchema

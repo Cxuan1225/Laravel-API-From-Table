@@ -85,7 +85,9 @@ columns / types / nullable / defaults
 - Generate API resources
 - Generate API resource controllers with `index`, `store`, `show`, `update`, and `destroy`
 - Support `--dry-run` preview
+- Support JSON dry-run plans for tooling
 - Support `--force` overwrite
+- Optional API route, smoke test, and relationship generation
 - Publishable config
 - Publishable stubs
 
@@ -141,6 +143,14 @@ Preview the generated files without writing them:
 ```bash
 php artisan api:from-table customers --dry-run
 ```
+
+For machine-readable previews:
+
+```bash
+php artisan api:from-table customers --dry-run --json
+```
+
+The JSON output lists planned files, warnings, skipped files, route targets, and test targets.
 
 ---
 
@@ -198,6 +208,32 @@ php artisan api:from-table customers --resource
 
 ```bash
 php artisan api:from-table customers --controller
+```
+
+---
+
+## Generate Routes
+
+Append an API resource route to the configurable routes path, which defaults to `routes/web.php`:
+
+```bash
+php artisan api:from-table customers --routes
+```
+
+Append the route to `routes/api.php`:
+
+```bash
+php artisan api:from-table customers --api-routes
+```
+
+---
+
+## Generate Relationships
+
+Relationship generation is opt-in. When enabled, single-column foreign keys can generate `belongsTo`, inverse `hasMany`, and `whenLoaded` resource fields:
+
+```bash
+php artisan api:from-table orders --relationships
 ```
 
 ---
@@ -276,9 +312,11 @@ public function rules(): array
 | `--actions` | Generate only Action files |
 | `--resource` | Generate only the API Resource file |
 | `--controller` | Generate only the API Controller file |
-| `--routes` | Append a `Route::apiResource(...)` entry to `routes/web.php` |
-| `--api-routes` | Alias of `--routes` |
+| `--routes` | Append a `Route::apiResource(...)` entry to the configured routes path |
+| `--api-routes` | Append a `Route::apiResource(...)` entry to `routes/api.php` |
+| `--relationships` | Generate opt-in Eloquent relationships and `whenLoaded` resource fields from foreign keys |
 | `--tests` | Generate a Pest endpoint smoke test |
+| `--json` | Emit JSON output when combined with `--dry-run` |
 | `--all` | Generate all supported files, ignoring disabled defaults |
 
 ---
@@ -342,8 +380,10 @@ The first release focuses on generating a practical Laravel API layer from one e
 - Store and Update Action classes
 - API Resource class
 - API Controller with `index`, `store`, `show`, `update`, and `destroy`
-- Optional `routes/web.php` route snippet and Pest smoke test generation
+- Optional `routes/web.php` or `routes/api.php` route snippet and stronger Pest smoke test generation
+- Optional foreign-key relationship generation with resource `whenLoaded` output
 - `--dry-run`, `--force`, and file-type-only generation options
+- `--dry-run --json` plans for tooling
 - Publishable config and stubs
 
 ---
@@ -353,7 +393,6 @@ The first release focuses on generating a practical Laravel API layer from one e
 ### Schema Intelligence
 
 - Foreign key detection
-- BelongsTo relationship generation
 - Check constraint parsing across more database drivers
 
 ### API Ergonomics
