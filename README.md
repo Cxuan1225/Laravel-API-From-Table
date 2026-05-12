@@ -226,6 +226,32 @@ Append the route to `routes/api.php`:
 php artisan api:from-table customers --api-routes
 ```
 
+Generated resource URIs use kebab case by default, so a `legacy_users` table generates:
+
+```php
+Route::apiResource('legacy-users', \App\Http\Controllers\LegacyUserController::class);
+```
+
+---
+
+## Generate Smoke Tests
+
+Generate Pest endpoint smoke tests:
+
+```bash
+php artisan api:from-table customers --tests
+```
+
+When `--tests` is combined with `--api-routes`, generated test requests use the configurable API prefix, which defaults to `/api`:
+
+```bash
+php artisan api:from-table legacy_users --api-routes --tests
+```
+
+```php
+$this->getJson('/api/legacy-users')->assertOk();
+```
+
 ---
 
 ## Generate Relationships
@@ -335,6 +361,18 @@ The config file will be published to:
 config/api-from-table.php
 ```
 
+Route naming and smoke-test prefixes can be customized:
+
+```php
+'routes' => [
+    'resource_name_style' => 'kebab',
+    'prefixes' => [
+        'routes' => '',
+        'api_routes' => 'api',
+    ],
+],
+```
+
 ---
 
 ## Custom Stubs
@@ -382,6 +420,7 @@ The first release focuses on generating a practical Laravel API layer from one e
 - API Controller with `index`, `store`, `show`, `update`, and `destroy`
 - Optional `routes/web.php` or `routes/api.php` route snippet and stronger Pest smoke test generation
 - Optional foreign-key relationship generation with resource `whenLoaded` output
+- Shared route resolver for generated route names and test URIs
 - `--dry-run`, `--force`, and file-type-only generation options
 - `--dry-run --json` plans for tooling
 - Publishable config and stubs

@@ -18,6 +18,7 @@ use Cxuan1225\LaravelApiFromTable\Generators\UpdateRequestGenerator;
 use Cxuan1225\LaravelApiFromTable\Schema\DatabaseSchemaReader;
 use Cxuan1225\LaravelApiFromTable\Schema\TableSchema;
 use Cxuan1225\LaravelApiFromTable\Support\FileWriter;
+use Cxuan1225\LaravelApiFromTable\Support\RouteResolver;
 use Illuminate\Console\Command;
 use Throwable;
 
@@ -76,6 +77,7 @@ class ApiFromTableCommand extends Command
         $shouldRoutes = (bool) $this->option('routes');
         $shouldApiRoutes = (bool) $this->option('api-routes');
         $shouldTests = (bool) $this->option('tests');
+        $routeTarget = $shouldApiRoutes ? RouteResolver::TARGET_API_ROUTES : RouteResolver::TARGET_ROUTES;
         if ((bool) $this->option('relationships')) {
             config()->set('api-from-table.generate.relationships', true);
         }
@@ -262,7 +264,7 @@ class ApiFromTableCommand extends Command
             $this->emitOrWrite(
                 'smoke_test',
                 $testsPath.DIRECTORY_SEPARATOR.$name.'.php',
-                $smokeTestGenerator->generate($schema),
+                $smokeTestGenerator->generate($schema, $routeTarget),
                 $dryRun,
                 $force,
                 $writer,

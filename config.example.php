@@ -64,6 +64,14 @@ return [
 
     'tinyint_one_as_boolean' => true,
 
+    'routes' => [
+        'resource_name_style' => 'kebab',
+        'prefixes' => [
+            'routes' => '',
+            'api_routes' => 'api',
+        ],
+    ],
+
     'generate' => [
         'model' => true,
         'store_request' => true,

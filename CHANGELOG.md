@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## v0.3.0 - 2026-05-12
+
+### Added
+
+- Added shared route resolution for generated route statements and smoke-test URIs
+- Added configurable generated route resource naming with kebab-case defaults
+- Added configurable smoke-test route prefixes for `--routes` and `--api-routes`
+
+### Fixed
+
+- Fixed generated resource route URIs for snake-case tables so `legacy_users` routes as `legacy-users`
+- Fixed generated smoke tests for `--api-routes --tests` so endpoint assertions use the `/api` prefix
+
+---
+
 ## v0.2.0 - 2026-05-12
 
 ### Added

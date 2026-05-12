@@ -9,6 +9,7 @@ use Cxuan1225\LaravelApiFromTable\Inferrers\ModelNameInferrer;
 use Cxuan1225\LaravelApiFromTable\Inferrers\ValidationRuleInferrer;
 use Cxuan1225\LaravelApiFromTable\Schema\ColumnSchema;
 use Cxuan1225\LaravelApiFromTable\Schema\TableSchema;
+use Cxuan1225\LaravelApiFromTable\Support\RouteResolver;
 use Cxuan1225\LaravelApiFromTable\Support\StubRenderer;
 use Illuminate\Support\Str;
 
@@ -18,15 +19,16 @@ class SmokeTestGenerator
         protected ModelNameInferrer $modelNameInferrer,
         protected FieldExposureResolver $fieldExposureResolver,
         protected ValidationRuleInferrer $validationRuleInferrer,
+        protected RouteResolver $routeResolver,
         protected StubRenderer $renderer,
     ) {}
 
-    public function generate(TableSchema $schema): string
+    public function generate(TableSchema $schema, string $routeTarget = RouteResolver::TARGET_ROUTES): string
     {
         $modelName = $this->modelNameInferrer->infer($schema->name);
         $modelNamespace = (string) config('api-from-table.namespace.models', 'App\\Models');
         $variable = Str::camel($modelName);
-        $uri = '/'.$schema->name;
+        $uri = $this->routeResolver->uri($schema, $routeTarget);
 
         return $this->renderer->render($this->stub(), [
             'imports' => $this->buildImports($schema),
@@ -40,10 +42,10 @@ class SmokeTestGenerator
             'sensitive_assertions' => $this->buildSensitiveAssertions($schema),
             'invalid_payload' => $this->buildInvalidPayload($schema),
             'validation_error_fields' => $this->buildValidationErrorFields($schema),
-            'sensitive_test' => $this->sensitiveTest($schema, $variable),
+            'sensitive_test' => $this->sensitiveTest($schema, $variable, $routeTarget),
             'password_test' => $this->passwordTest($schema, $variable),
-            'unique_update_test' => $this->uniqueUpdateTest($schema, $variable),
-            'validation_test' => $this->validationTest($schema, $variable),
+            'unique_update_test' => $this->uniqueUpdateTest($schema, $variable, $routeTarget),
+            'validation_test' => $this->validationTest($schema, $variable, $routeTarget),
         ]);
     }
 
@@ -168,7 +170,7 @@ class SmokeTestGenerator
         };
     }
 
-    protected function sensitiveTest(TableSchema $schema, string $modelVariable): string
+    protected function sensitiveTest(TableSchema $schema, string $modelVariable, string $routeTarget): string
     {
         if ($this->fieldExposureResolver->modelHidden($schema) === []) {
             return '';
@@ -188,7 +190,7 @@ it('does not expose sensitive {{ model_variable }} fields', function () {
 PHP, [
             'model_class' => $this->modelNameInferrer->infer($schema->name),
             'model_variable' => $modelVariable,
-            'uri' => '/'.$schema->name,
+            'uri' => $this->routeResolver->uri($schema, $routeTarget),
             'create_payload' => $this->buildPayload($schema, update: false),
             'sensitive_assertions' => $this->buildSensitiveAssertions($schema),
         ]);
@@ -219,7 +221,7 @@ PHP, [
         ]);
     }
 
-    protected function uniqueUpdateTest(TableSchema $schema, string $modelVariable): string
+    protected function uniqueUpdateTest(TableSchema $schema, string $modelVariable, string $routeTarget): string
     {
         if ($this->uniqueWritableFields($schema) === []) {
             return '';
@@ -239,13 +241,13 @@ it('updates a {{ model_variable }} while keeping unique values unchanged', funct
 PHP, [
             'model_class' => $this->modelNameInferrer->infer($schema->name),
             'model_variable' => $modelVariable,
-            'uri' => '/'.$schema->name,
+            'uri' => $this->routeResolver->uri($schema, $routeTarget),
             'create_payload' => $this->buildPayload($schema, update: false),
             'unique_update_payload' => $this->buildUniqueUpdatePayload($schema, $modelVariable),
         ]);
     }
 
-    protected function validationTest(TableSchema $schema, string $modelVariable): string
+    protected function validationTest(TableSchema $schema, string $modelVariable, string $routeTarget): string
     {
         if ($this->buildInvalidPayload($schema) === '') {
             return '';
@@ -263,7 +265,7 @@ it('rejects invalid {{ model_variable }} payload', function () {
 });
 PHP, [
             'model_variable' => $modelVariable,
-            'uri' => '/'.$schema->name,
+            'uri' => $this->routeResolver->uri($schema, $routeTarget),
             'create_payload' => $this->buildPayload($schema, update: false),
             'invalid_payload' => $this->buildInvalidPayload($schema),
             'validation_error_fields' => $this->buildValidationErrorFields($schema),
